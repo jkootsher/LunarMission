@@ -11,8 +11,8 @@ class GLOBALS(object):
         'MASS':   0.07346e24,     # kg
         'RADIUS': 1738.10e00,     # km
 
-        'TO_EARTH': 384.4e05,     # km
-        'ORBIT_T': 377.084e03,    # sec
+        'TO_LIB2': 6.1347e03,     # km
+        'T_ORBIT': 375.667e03,    # sec
     }
 
     EARTH = {
@@ -20,13 +20,14 @@ class GLOBALS(object):
         'MASS':   5.97240e24,     # kg
         'RADIUS': 6378.10e00,     # km
 
-        'TO_MOON': 385.692e05,    # km
+        'TO_MOON': 384.4e03,      # km
     }
 
     CONSTANTS = {
         'GRAVCONST':   6.6743e-20, # km^3/(kg*s^2)
         'VECTOR_SIZE': 3,          # n/a
-        'STATE_VECTOR_DIM': 6      # n/a
+        'STATE_VECTOR_DIM': 6,     # n/a
+        'DEGREES_IN_CIRCLE': 360,  # n/a
     }
 
 # Put the control torque and decay time elsewhere

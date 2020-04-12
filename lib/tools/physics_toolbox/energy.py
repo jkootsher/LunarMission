@@ -1,4 +1,4 @@
-from lib.general.datatypes import Vector
+from lib.simcore.support.datatypes import Vector
 
 def jacobi(r=Vector(), v=Vector(), mu=1):
     ''' Calculate the Jacobi energy for the current orbit state '''

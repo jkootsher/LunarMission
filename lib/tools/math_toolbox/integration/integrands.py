@@ -2,7 +2,7 @@ import math
 import numpy
 
 from lib.tools.generators import gmat
-from lib.general.variables import GLOBALS
+from lib.simcore.support.variables import GLOBALS
 
 class CRTBP(object):
 
@@ -73,11 +73,3 @@ class CRTBP(object):
         dF = numpy.append(dA, df, axis=0)
 
         return dF
-
-    @classmethod
-    def testhandle(cls, **kwargs):
-        ''' Test Function '''
-        state = kwargs['y']
-        for i in range(len(state)):
-            state[i] = state[i]**2
-        return state

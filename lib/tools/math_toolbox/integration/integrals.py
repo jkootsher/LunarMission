@@ -1,24 +1,25 @@
 import numpy
+from lib.simcore.function_library import feval
 
-def feval(fhandle=None, **kwargs):
-    ''' Evaluate function fhandle at args '''
-    return fhandle(**kwargs)
 
 def RK4(fhandle=None, **kwargs):
     ''' Runge-Kutta (4th order) numerical integrator '''
-    x_initial = kwargs['x']
-    y_initial = kwargs['y']
-
     h = kwargs['h']
+    
+    x_span = kwargs['x']
+    x_delta = int((x_span[-1] - x_span[0])/h)
+    x_initial = x_span[0]
+
+    y_initial = kwargs['y']
     state_size = len(y_initial)
 
-    x_update = x_initial[0]
+    x_update = x_initial
     y_update = y_initial
 
-    x_state = numpy.array([x_update])
-    y_state = numpy.array(y_update)
+    x_state = numpy.asarray([x_update])
+    y_state = numpy.asarray(y_update)
     
-    for idx in range(len(x_initial)):
+    for idx in range(x_delta):
         kwargs['x'] = x_update
         kwargs['y'] = y_update
         k1 = feval(fhandle, **kwargs)
@@ -46,22 +47,25 @@ def RK4(fhandle=None, **kwargs):
 
 def ABM4(fhandle=None, **kwargs):
     ''' Adam's & Bashforth method (4th order) for numerical integration '''
-    x_initial = kwargs['x']
-    y_initial = kwargs['y']
-
     h = kwargs['h']
-    x_initial = x_initial*h
+    
+    x_span = kwargs['x']
+    x_delta = int((x_span[-1] - x_span[0])/h)
+    x_initial = [x_span[0] + n*h for n in range(x_delta+1)]
+
+    y_initial = kwargs['y']
     state_size = len(y_initial)
 
-    kwargs['x'] = x_initial[0:3]
+    kwargs['x'] = (x_initial[0], x_initial[3])
     kwargs['y'] = y_initial
+
     [x_update, y_update] = RK4(fhandle, **kwargs)
     
-    x_state = numpy.array(x_update)
-    y_state = numpy.array(y_update)
+    x_state = numpy.asarray(x_update)
+    y_state = numpy.asarray(y_update)
 
-    for idx in range(3, len(x_initial)):
-        kwargs['x'] = x_update[idx]        
+    for idx in range(3, x_delta):
+        kwargs['x'] = x_update[idx]
         kwargs['y'] = y_update[:,idx]
         df0 = feval(fhandle, **kwargs)
 
