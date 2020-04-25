@@ -9,10 +9,10 @@ from lib.simcore.support.variables import GLOBALS
 # frame is the ROTATING barycentric frame. Consider renaming frames to
 # accurately reflect this. Otherwise, the language won't make sense.
 
-class Frame(object):
+class Frames(object):
     ''' Halo orbit frames class '''
 
-    def _get_rmat(self, relative_frame_angle=0):
+    def _fixed_rotation(self, relative_frame_angle=0):
         ''' Generate the rotation matrix for a general inertial barycentric
             body centered frame to the rotating (fixed) barycentric frame '''
         FBY2BYIpos = numpy.asarray([[+math.cos(relative_frame_angle), -math.sin(relative_frame_angle), 0], \
@@ -40,7 +40,7 @@ class Frame(object):
 
         relative_frame_angle = math.atan2(y_barycenter, x_barycenter)
 
-        FBY2BYI = self._get_rmat(relative_frame_angle)
+        FBY2BYI = self._fixed_rotation(relative_frame_angle)
 
         state_vector = numpy.matmul(FBY2BYI, state_vector)
         state_vector = state_vector*GLOBALS.EARTH['TO_MOON']
@@ -56,7 +56,7 @@ class Frame(object):
 
         relative_frame_angle = math.atan2(y_lunar, x_lunar)
 
-        FBY2BYI = self._get_rmat(relative_frame_angle)
+        FBY2BYI = self._fixed_rotation(relative_frame_angle)
 
         state_vector = numpy.matmul(FBY2BYI.T, state_vector)
         state_vector = state_vector/GLOBALS.EARTH['TO_MOON']
@@ -72,7 +72,7 @@ class Frame(object):
 
         relative_frame_angle = math.atan2(y_barycenter, x_barycenter)
 
-        FBY2BYI = self._get_rmat(relative_frame_angle)
+        FBY2BYI = self._fixed_rotation(relative_frame_angle)
 
         state_vector = numpy.matmul(FBY2BYI, state_vector)
         state_vector = state_vector*GLOBALS.EARTH['TO_MOON']
@@ -87,7 +87,7 @@ class Frame(object):
 
         relative_frame_angle = math.atan2(y_lunar, x_lunar)
 
-        FBY2BYI = self._get_rmat(relative_frame_angle)
+        FBY2BYI = self._fixed_rotation(relative_frame_angle)
 
         state_vector = numpy.matmul(FBY2BYI.T, state_vector)
         state_vector = state_vector/GLOBALS.EARTH['TO_MOON']

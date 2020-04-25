@@ -2,6 +2,7 @@ import math
 import numpy
 
 from lib.tools.generators import gmat
+from lib.tools.generators import xmat
 from lib.simcore.support.variables import GLOBALS
 
 class CRTBP(object):
@@ -73,3 +74,35 @@ class CRTBP(object):
         dF = numpy.append(dA, df, axis=0)
 
         return dF
+
+
+class MRP(object):
+
+    @classmethod
+    def fhandle(cls, **kwargs):
+        ''' Function handle for equation of motion '''
+        state = kwargs['y']
+        moments = kwargs['moments']
+        control_torque = kwargs['control_torque']
+
+        # Break up state vector into MRPs and body rates
+        s = state[0:3]
+        w = state[3:6]
+
+        # Cross product matrix representation
+        S_XMAT = xmat(s[:,-1])
+        W_XMAT = xmat(w[:,-1])
+
+        # Equation of motion
+        S_MAT = .25*((1-numpy.linalg.norm(s)**2)*numpy.identity(3) + 2*S_XMAT + 2*numpy.dot(s,s.T))
+        s = numpy.matmul(S_MAT, w)
+
+        # Rate calculation
+        I_INV = numpy.linalg.inv(moments)
+        W_MAT = numpy.matmul(W_XMAT, moments)
+        W_MAT = numpy.matmul(I_INV, W_MAT)
+        w = -numpy.matmul(W_MAT, w) + control_torque
+
+        # Updated state
+        state = numpy.append(s, w, axis=0)
+        return state

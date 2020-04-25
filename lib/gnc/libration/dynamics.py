@@ -1,6 +1,7 @@
 import numpy
 import lib.tools.math_toolbox.ode.solver as solver
 
+from lib.gnc.libration.frames import Frames
 from lib.tools.physics_toolbox import energy
 from lib.simcore.support.datatypes import Vector
 from lib.simcore.support.variables import GLOBALS
@@ -16,6 +17,7 @@ class Orbit(object):
         self.velocity = Vector((0.0,-0.2054,0.0), 'L2 Inertial')
 
         self.L2 = self._lagrange_point()
+        self.Frames = Frames()
         return
 
     def _lagrange_point(self, true_root=0):
@@ -38,9 +40,6 @@ class Orbit(object):
             if  roots[idx] > mu_b:
                 true_root = numpy.absolute(roots[idx])
         return true_root
-
-    def _state_transition_matrix_update(self):
-        pass
 
     def change_initial_conditions(self, position=None, velocity=None):
         ''' Change the initial orbital parameters '''

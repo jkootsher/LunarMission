@@ -1,6 +1,7 @@
 import math
 import numpy
 
+
 def gmat(r, mu):
     ''' Generate the matrix G that represents the orbital gravitation as a function of position '''
 
@@ -22,4 +23,34 @@ def gmat(r, mu):
 
     gmat = numpy.array([[u11,u12,u13], [u21,u22,u23], [u31,u32,u33]])
     return gmat
-            
+
+def xmat(s):
+    ''' Generate the matrix X that represents a cross product from s '''
+    xmat = numpy.array([[0, -s[2], s[1]], [s[2], 0, -s[0]], [-s[1], s[0], 0]])
+    return xmat
+
+def euler_313(phi):
+    ''' Generate the 313 rotation sequence (angles must be radian) '''
+    r11 = math.cos(phi[2])*math.cos(phi[0]) - math.sin(phi[2])*math.cos(phi[1])*math.sin(phi[0])
+    r12 = -math.cos(phi[2])*math.sin(phi[0]) - math.sin(phi[2])*math.cos(phi[1])*math.cos(phi[0])
+    r13 = math.sin(phi[2])*math.sin(phi[1])
+    r21 = math.sin(phi[2])*math.cos(phi[0]) + math.cos(phi[2])*math.cos(phi[1])*math.sin(phi[0])
+    r22 = -math.sin(phi[2])*math.sin(phi[0]) + math.cos(phi[2])*math.cos(phi[1])*math.cos(phi[0])
+    r23 = -math.cos(phi[2])*math.sin(phi[1])
+    r31 = math.sin(phi[1])*math.sin(phi[0])
+    r32 = math.sin(phi[1])*math.cos(phi[0])
+    r33 = math.cos(phi[1])
+    return numpy.asarray([[r11, r12, r13], [r21, r22, r23], [r31, r32, r33]])
+
+def euler_232(phi):
+    ''' Generate the 232 rotation sequence (angles must be radian) '''
+    r11 = math.cos(phi[2])*math.cos(phi[1])*math.cos(phi[0]) - math.sin(phi[2])*math.sin(phi[0])
+    r12 = math.cos(phi[2])*math.sin(phi[1])
+    r13 = -math.sin(phi[2])*math.cos(phi[0]) - math.cos(phi[2])*math.cos(phi[1])*math.sin(phi[0])
+    r21 = -math.sin(phi[1])*math.cos(phi[0])
+    r22 = math.cos(phi[1])
+    r23 = math.sin(phi[1])*math.sin(phi[0])
+    r31 = math.cos(phi[2])*math.sin(phi[0]) + math.sin(phi[2])*math.cos(phi[1])*math.cos(phi[0])
+    r32 = math.sin(phi[2])*math.sin(phi[1])
+    r33 = math.cos(phi[2])*math.cos(phi[0]) - math.sin(phi[2])*math.cos(phi[1])*math.sin(phi[0])
+    return numpy.asarray([[r11, r12, r13], [r21, r22, r23], [r31, r32, r33]])

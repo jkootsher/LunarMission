@@ -24,7 +24,7 @@ class GLOBALS(object):
     }
 
     CONSTANTS = {
-        'GRAVCONST':   6.6743e-20, # km^3/(kg*s^2)
+        'GRAV': 6.6743e-20,        # km^3/(kg*s^2)
         'VECTOR_SIZE': 3,          # n/a
         'STATE_VECTOR_DIM': 6,     # n/a
         'DEGREES_IN_CIRCLE': 360,  # n/a

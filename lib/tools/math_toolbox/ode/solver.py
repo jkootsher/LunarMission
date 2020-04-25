@@ -18,6 +18,13 @@ def ode113m(**kwargs):
     kwargs['y'] = kwargs['state']
     return integrate.ABM4(seed.CRTBP.mfhandle, **kwargs)
 
+def ode45v(**kwargs):
+    ''' Runge-Kutta 4th order ODE (non-stiff) for single state dynamics '''
+    kwargs['h'] = kwargs['delta']
+    kwargs['x'] = kwargs['tspan']
+    kwargs['y'] = kwargs['state']
+    return integrate.RK4(seed.MRP.fhandle, **kwargs)
+
 def newton_raphson(fhandle=None, **kwargs):
     ''' Newton Raphson root finding method '''
     dfhandle = kwargs['df']
