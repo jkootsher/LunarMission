@@ -3,6 +3,7 @@ import matplotlib.pyplot as mplot
 
 from mpl_toolkits.mplot3d import Axes3D
 
+from lib.gnc.cr3bp import LCR3BP
 from lib.gnc.libration.frames import Frames
 from lib.gnc.libration.dynamics import Orbit
 from lib.simcore.support.variables import GLOBALS
@@ -24,27 +25,17 @@ from lib.simcore.support.variables import GLOBALS
 # L2 Lyapunov Orbital Parameters for Northern L2 HALO family
 #
 
-# Timekeeping
-dt = 2e-4                   # step size
-Torbit = 3.1959             # multiply by 'T' to get time
-span_dt = (0,Torbit/2)      # time span for a single orbit
-
 # HALO model (CRTBP)
-Halo_Orbit = Orbit(GLOBALS.LUNAR['MU'], GLOBALS.EARTH['MU'])
+elements = LCR3BP(h=2e-4, sbdy=GLOBALS.LUNAR['MU'], lbdy=GLOBALS.EARTH['MU'])
+Halo_Orbit = Orbit(elements)
 
-# Change the default parameters (optional)
-position = (1.1503, 0, 0.1459)
-velocity = (0, -0.2180, 0)
-Halo_Orbit.change_initial_conditions(position, velocity)
+# Generate trajectory of HALO (N=1 default)
+trajectory = Halo_Orbit.get_barycenter_fixed_solution(N=4)
 
 # Locations of interest
 L2_xlocation = Halo_Orbit.L2
 Earth_xlocation = -Halo_Orbit.mu
 Lunar_xlocation = 1-Halo_Orbit.mu
-
-# Generate trajectory of HALO (N=1 default)
-trajectory = Halo_Orbit.get_barycenter_fixed_solution(N=4, delta=dt, tspan=span_dt)
-# trajectory = numpy.asarray(trajectory)
 
 # ECI frame
 trajectory_eci = numpy.empty((6,0))
@@ -54,12 +45,12 @@ for t in range(elapsed_time):
     eci_vector = Halo_Orbit.Frames.barycenter_fixed_to_barycenter_earth_inertial(trajectory[:,t])
     trajectory_eci = numpy.append(trajectory_eci, eci_vector, axis=1)
     
-time_in_eci_frame = [idx*dt*GLOBALS.LUNAR['T_ORBIT'] for idx in range(trajectory_eci.shape[1])]
+time_in_eci_frame = [idx*elements.step*GLOBALS.LUNAR['T_ORBIT'] for idx in range(trajectory_eci.shape[1])]
 
 # Verify the satellite velocity normal to the orbital plane is
 # approx. the mean orbital speed of moon (1.022 km/s). This should
 # occur when the satellite is directly above or below the moon (~1{3}/4 T)
-lunar_match_time = int(Torbit/dt)//5
+lunar_match_time = int(elements.period/elements.step)//5
 print(trajectory_eci[4,lunar_match_time])
 
 # Plot HALO model
@@ -88,7 +79,7 @@ ax.legend(loc='upper left')
 fig3 = mplot.figure()
 ax = fig3.gca()
 barycentric_common_time = ax.get_xticks()
-eci_frame_ref_time = barycentric_common_time*GLOBALS.LUNAR['T_ORBIT']*dt*trajectory_eci.shape[1]
+eci_frame_ref_time = barycentric_common_time*GLOBALS.LUNAR['T_ORBIT']*elements.step*trajectory_eci.shape[1]
 ax.set_xticks(eci_frame_ref_time)
 ax.plot(time_in_eci_frame, trajectory_eci[0,:], color='blue', label='x-axis')
 ax.plot(time_in_eci_frame, trajectory_eci[1,:], color='red', label='y-axis')
@@ -111,7 +102,7 @@ ax.legend(loc='upper left')
 fig5 = mplot.figure()
 ax = fig5.gca()
 barycentric_common_time = ax.get_xticks()
-eci_frame_ref_time = barycentric_common_time*GLOBALS.LUNAR['T_ORBIT']*dt*trajectory_eci.shape[1]
+eci_frame_ref_time = barycentric_common_time*GLOBALS.LUNAR['T_ORBIT']*elements.step*trajectory_eci.shape[1]
 ax.set_xticks(eci_frame_ref_time)
 ax.plot(time_in_eci_frame, trajectory_eci[3,:], color='blue', label='x-axis')
 ax.plot(time_in_eci_frame, trajectory_eci[4,:], color='red', label='y-axis')

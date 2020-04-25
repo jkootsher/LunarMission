@@ -1,49 +1,30 @@
-from lib.simcore.support.variables import GLOBALS
-from lib.models.lunar_orbiter import Satellite
-from lib.gnc.libration.dynamics import Orbit as L2
-from lib.gnc.lunar.dynamics import Orbit
-from lib.gnc.kepler import Kepler
-
-from lib.simcore.function_library import axisEqual3D
-
-import math
 import numpy
 import matplotlib.pyplot as mplot
 
-from mpl_toolkits.mplot3d import Axes3D
+from lib.gnc.cr3bp import LCR3BP
+from lib.gnc.kepler import Kepler
+from lib.models.orbiter import Satellite
+from lib.models.lunar_relay import Target
+from lib.simcore.support.variables import GLOBALS
+from lib.gnc.lunar.dynamics import Orbit as Lunar
+from lib.gnc.libration.dynamics import Orbit as L2
+
+ORBIT_CYCLES = 8
 
 elements = Kepler(e=0.6, a=400, i=0, argp=0, raan=0)
-Lunar_Orbit = Orbit(elements)
+Lunar_Orbit = Lunar(elements)
 
-# t = 2e-4                   # step size
-# Torbit = 3.1959             # multiply by 'T' to get time
-# span_dt = (0,Torbit/2)      # time span for vehicle_state single orbit
+elements = LCR3BP(h=2e-4, sbdy=GLOBALS.LUNAR['MU'], lbdy=GLOBALS.EARTH['MU'], cycles=ORBIT_CYCLES)
+Halo_Orbit = L2(elements)
+L2_Satellite = Target(Halo_Orbit)
 
-# # TODO: CREATE A FUNCTION TO HANDLE DIFFERENT SAMPLING INTERVALS FOR COMM FRAME COMPARISON
-
-# # HALO model (CRTBP)
-# Halo_Orbit = L2(GLOBALS.LUNAR['MU'], GLOBALS.EARTH['MU'])
-
-# # Change the default parameters (optional)
-# position = (1.1503, 0, 0.1459)
-# velocity = (0, -0.2180, 0)
-# Halo_Orbit.change_initial_conditions(position, velocity)
-
-# # Generate trajectory of HALO (N=1 default)
-# trajectory = Halo_Orbit.get_barycenter_fixed_solution(N=4, delta=dt, tspan=span_dt)
-
-# state_space_lci = numpy.empty((6,0))
-
-# for n in range(Lunar_Orbit.total_orbital_samples()):
-#     # Moon
-#     state_vector_lci = Lunar_Orbit.inertial_solution(n)
-#     state_space_lci = numpy.append(state_space_lci, state_vector_lci, axis=1)
 
 t_min = 0
-t_max = 4*Lunar_Orbit.period
+t_max = ORBIT_CYCLES*Lunar_Orbit.period
 
-Test_Sat = Satellite(Lunar_Orbit)
-vehicle_state = Test_Sat.update_dynamics(delta=.1, dt=(t_min,t_max))
+Orbiter = Satellite(Lunar_Orbit)
+Orbiter.Target = L2_Satellite
+vehicle_state = Orbiter.update_dynamics(delta=.1, dt=(t_min,t_max))
 
 fig1 = mplot.figure()
 ax = fig1.gca()

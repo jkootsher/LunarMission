@@ -1,11 +1,10 @@
 import numpy
 
-from lib.tools.math_toolbox.ode import solver
 from lib.tools.conversions import mrp2dcm
-
+from lib.tools.conversions import deg2rad
+from lib.tools.math_toolbox.ode import solver
 from lib.gnc.control.pointing import Pointing
 from lib.gnc.control.controller import Controller
-from lib.tools.conversions import deg2rad
 
 
 class Vehicle(object):
@@ -35,12 +34,16 @@ class Vehicle(object):
 
 
 class Satellite(Vehicle):
-    ''' Lunar Model Class '''
+    ''' Generic Orbiter Model '''
 
     def __init__(self, Orbit=None):
         super(Satellite, self).__init__()
         self.Pointing = Pointing(Orbit)
         self.Controller = Controller()
+
+        # Vehicle tracking (optional)
+        self.Target = None
+        self.antenna_span = 60 # deg
 
         # Initial configuration
         self.Controller.moi = self.moments
@@ -55,6 +58,17 @@ class Satellite(Vehicle):
             attitude = -attitude/norm_s**2
             vehicle_state[0:3] = attitude
         return numpy.reshape(vehicle_state, (6,1))
+
+    def _configure_antenna(self, **kwargs):
+        ''' Configure the vehicle for communication '''
+        # Update the antenna span
+        antenna_span = deg2rad(self.antenna_span)
+        delta_angle = self.Pointing.relay.update_span(**kwargs)
+
+        # Check if vehicle is in range
+        if (delta_angle < antenna_span):
+            self.Controller.set_pointing(self.Pointing.relay)
+        return
         
     def update_dynamics(self, dt=(0,1), **kwargs):
         ''' Get the state trajectory with body rates (inertial lunar frame) '''
@@ -65,7 +79,7 @@ class Satellite(Vehicle):
         kwargs['moments'] = self.moments
         
         tspan = dt[-1]-dt[0]
-        samples = int(tspan/step_size)
+        samples = int(1+tspan/step_size)
         vehicle_state_history = vehicle_body_state
 
         # Set the controller signal decay time
@@ -78,6 +92,13 @@ class Satellite(Vehicle):
 
             if kwargs['orbit'][0] > 0:
                 self.Controller.set_pointing(self.Pointing.nadir)
+
+                # Verify vehicle tracking (relay mode)
+                if self.Target is not None:
+                    kwargs['nspan'] = (n,n+1)
+                    kwargs['local'] = self.Pointing.get_state_range(**kwargs)
+                    kwargs['target'] = self.Pointing.relay.track(self.Target, **kwargs)
+                    self._configure_antenna(**kwargs)
             else:
                 self.Controller.set_pointing(self.Pointing.sun)
             

@@ -32,7 +32,7 @@ distance_to_moon = GLOBALS.EARTH['TO_MOON']
 # Define Moon model with the vehicle orbit
 lunar_radius = GLOBALS.LUNAR['RADIUS']
 foci_separation_magnitude = 2*elements.semi_major_axis*elements.eccentricity
-foci_separation_vector = numpy.ones((3,1))
+foci_separation_vector = numpy.asarray([-1,1,1])*foci_separation_magnitude
 
 PQW2BYI = Lunar_Orbit.Frames.perifocal_to_barycenter_lunar_inertial()[:3,:3]
 foci_location = numpy.matmul(PQW2BYI, foci_separation_vector)
@@ -91,8 +91,8 @@ ax.plot(state_space_lci[0,:], state_space_lci[1,:], state_space_lci[2,:], label=
 
 # Moon
 ax.scatter(0, 0, 0, marker='o', color='green', label='Lunar CM (Interior Focus)')
-ax.scatter(foci_location[0], 0, foci_location[2], marker='o', color='purple', label='Exterior Focus')
 ax.plot_wireframe(x_lunar, y_lunar, z_lunar, color='red', rstride=8, cstride=8, label='Lunar Surface')
+ax.scatter(foci_location[0], foci_location[1], foci_location[2], marker='o', color='purple', label='Exterior Focus')
 
 axisEqual3D(ax)
 mplot.title('Low Lunar Orbit (LCI)', fontsize=14)

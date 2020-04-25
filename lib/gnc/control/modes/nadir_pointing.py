@@ -1,25 +1,15 @@
 import numpy
 
+from lib.gnc.control.frames import Frames
 from lib.tools.conversions import unit_vector
 
 
-class Nadir(object):
+class Nadir(Frames):
     ''' Nadir Pointing Control Mode '''
 
     def __init__(self):
+        super(Nadir, self).__init__()
         self.fname = 'nadir'
-
-    def _inertial_to_lvlh(self, state_vector=None):
-        ''' General inertial to LVLH (Hill) '''
-        r_vector = numpy.reshape(state_vector[0:3], (3,1))
-        v_vector = numpy.reshape(state_vector[3:6], (3,1))
-        w_vector = numpy.cross(r_vector, v_vector, axis=0)
-        
-        BYI2LVH = numpy.zeros((3,3))
-        BYI2LVH[2,:] = unit_vector(r_vector.T)
-        BYI2LVH[1,:] = unit_vector(w_vector.T)
-        BYI2LVH[0,:] = numpy.cross(BYI2LVH[2,:], BYI2LVH[0,:])
-        return BYI2LVH
 
     def relative_rates(self, **kwargs):
         ''' Relative rate calculation for the nadir frame '''
@@ -28,7 +18,7 @@ class Nadir(object):
         v_vector = numpy.reshape(state_vector[3:6], (3,1))
 
         # Transform to LVLH (Hill) frame
-        BYI2LVH = self._inertial_to_lvlh(state_vector)
+        BYI2LVH = self.inertial_to_lvlh(state_vector)
         r_vector = numpy.matmul(BYI2LVH, r_vector)
         v_vector = numpy.matmul(BYI2LVH, v_vector)
 
@@ -44,7 +34,7 @@ class Nadir(object):
         ''' Inertial origin frame to orbiter nadir pointing frame '''
         state_vector = kwargs['orbit']
 
-        BYI2LVH = self._inertial_to_lvlh(state_vector)
+        BYI2LVH = self.inertial_to_lvlh(state_vector)
 
         # Antenna normally facing away from nadir
         # To point toward nadir, simply reflect x
