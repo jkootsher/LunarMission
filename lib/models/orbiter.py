@@ -68,6 +68,8 @@ class Satellite(Vehicle):
         # Check if vehicle is in range
         if (delta_angle < antenna_span):
             self.Controller.set_pointing(self.Pointing.relay)
+        else:
+            self.Controller.set_pointing(self.Pointing.nadir)
         return
         
     def update_dynamics(self, dt=(0,1), **kwargs):
@@ -91,14 +93,14 @@ class Satellite(Vehicle):
             kwargs['orbit'] = self.Pointing.Orbit.inertial_solution(n*step_size)
 
             if kwargs['orbit'][0] > 0:
-                self.Controller.set_pointing(self.Pointing.nadir)
-
                 # Verify vehicle tracking (relay mode)
                 if self.Target is not None:
                     kwargs['nspan'] = (n,n+1)
                     kwargs['local'] = self.Pointing.get_state_range(**kwargs)
                     kwargs['target'] = self.Pointing.relay.track(self.Target, **kwargs)
                     self._configure_antenna(**kwargs)
+                else:
+                    self.Controller.set_pointing(self.Pointing.nadir)
             else:
                 self.Controller.set_pointing(self.Pointing.sun)
             
