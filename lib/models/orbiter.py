@@ -43,7 +43,7 @@ class Satellite(Vehicle):
 
         # Vehicle tracking (optional)
         self.Target = None
-        self.antenna_span = 60 # deg
+        self.antenna_span = 28 # deg
 
         # Initial configuration
         self.Controller.moi = self.moments
@@ -59,7 +59,7 @@ class Satellite(Vehicle):
             vehicle_state[0:3] = attitude
         return numpy.reshape(vehicle_state, (6,1))
 
-    def _configure_antenna(self, **kwargs):
+    def _configure_antenna(self, configured=False, **kwargs):
         ''' Configure the vehicle for communication '''
         # Update the antenna span
         antenna_span = deg2rad(self.antenna_span)
@@ -67,13 +67,13 @@ class Satellite(Vehicle):
 
         # Check if vehicle is in range
         if (delta_angle < antenna_span):
+            configured = True
             self.Controller.set_pointing(self.Pointing.relay)
-        else:
-            self.Controller.set_pointing(self.Pointing.nadir)
-        return
+        return configured
         
     def update_dynamics(self, dt=(0,1), **kwargs):
         ''' Get the state trajectory with body rates (inertial lunar frame) '''
+        antenna_aligned = False
         step_size = kwargs['delta']
         vehicle_body_state = numpy.append(self.mrp, self.rates, axis=0)
 
@@ -92,17 +92,19 @@ class Satellite(Vehicle):
             kwargs['state'] = vehicle_body_state
             kwargs['orbit'] = self.Pointing.Orbit.inertial_solution(n*step_size)
 
-            if kwargs['orbit'][0] > 0:
-                # Verify vehicle tracking (relay mode)
-                if self.Target is not None:
+            # Verify vehicle tracking (relay mode)
+            if self.Target is not None:
                     kwargs['nspan'] = (n,n+1)
                     kwargs['local'] = self.Pointing.get_state_range(**kwargs)
                     kwargs['target'] = self.Pointing.relay.track(self.Target, **kwargs)
-                    self._configure_antenna(**kwargs)
+                    antenna_aligned = self._configure_antenna(**kwargs)
+
+            # Primary operational modes
+            if antenna_aligned is False:
+                if kwargs['orbit'][0] > 0:
+                    self.Controller.set_pointing(self.Pointing.nadir)                
                 else:
-                    self.Controller.set_pointing(self.Pointing.nadir)
-            else:
-                self.Controller.set_pointing(self.Pointing.sun)
+                    self.Controller.set_pointing(self.Pointing.sun)
             
             if not (n % tau): # Update every second
                 kwargs['control_torque'] = self.Controller.get_control_torque(**kwargs)

@@ -9,9 +9,9 @@ from lib.simcore.support.variables import GLOBALS
 from lib.gnc.lunar.dynamics import Orbit as Lunar
 from lib.gnc.libration.dynamics import Orbit as L2
 
-ORBIT_CYCLES = 2
+ORBIT_CYCLES = 4
 
-elements = Kepler(e=0.6, a=1000, i=56.2, argp=90, raan=0)
+elements = Kepler(e=0.6, a=600.4, i=56.2, argp=90, raan=0)
 Lunar_Orbit = Lunar(elements)
 
 elements = LCR3BP(h=2e-4, sbdy=GLOBALS.LUNAR['MU'], lbdy=GLOBALS.EARTH['MU'], cycles=ORBIT_CYCLES)
