@@ -10,8 +10,8 @@ class Controller(object):
     ''' Simple PD controller '''
 
     def __init__(self, tau=10):
-        self.tau = tau              # Decay time
-        self.moi = None             # Principal moments
+        self._tau = tau              # Decay time
+        self._moi = None             # Principal moments
 
         # Controls
         self.set_pointing()
@@ -25,10 +25,10 @@ class Controller(object):
         ''' Obtain the necessary control torque '''
         state_estimate = self._estimate_current_state(**kwargs)
         
-        kp = numpy.linalg.norm(self.moi/self.tau, numpy.inf)
-        ku = 2*numpy.linalg.norm(self.moi/self.tau**2, numpy.inf)
+        kp = numpy.linalg.norm(self._moi/self._tau, numpy.inf)
+        ku = 2*numpy.linalg.norm(self._moi/self._tau**2, numpy.inf)
 
-        MOI_INV = numpy.linalg.inv(self.moi)
+        MOI_INV = numpy.linalg.inv(self._moi)
         state_estimate = ku*state_estimate[0:3] + kp*state_estimate[3:6]
         state_estimate = numpy.reshape(state_estimate, (3,1))
         return -numpy.matmul(MOI_INV, state_estimate)

@@ -8,7 +8,7 @@ from lib.gnc.control.controller import Controller
 
 
 class Vehicle(object):
-    ''' Default Lunar Model Parameters '''
+    ''' Default Model Parameters '''
 
     def __init__(self):
         self.mrp = self._default_mrps()
@@ -38,15 +38,18 @@ class Satellite(Vehicle):
 
     def __init__(self, Orbit=None):
         super(Satellite, self).__init__()
-        self.Pointing = Pointing(Orbit)
-        self.Controller = Controller()
+        self._Controller = Controller()
+        self._Pointing = Pointing(Orbit)
 
         # Vehicle tracking (optional)
-        self.Target = None
-        self.antenna_span = 28 # deg
+        self._Target = None
+        self._antenna_span = 0
+
+        # Enable control
+        self._control_enabled = True
 
         # Initial configuration
-        self.Controller.moi = self.moments
+        self._Controller._moi = self.moments
 
     def _normalize_attitude(self, vehicle_state=None):
         ''' Check the MRPs for shadow set '''
@@ -59,56 +62,82 @@ class Satellite(Vehicle):
             vehicle_state[0:3] = attitude
         return numpy.reshape(vehicle_state, (6,1))
 
-    def _configure_antenna(self, configured=False, **kwargs):
+    def _configure_antenna(self, **kwargs):
         ''' Configure the vehicle for communication '''
         # Update the antenna span
-        antenna_span = deg2rad(self.antenna_span)
-        delta_angle = self.Pointing.relay.update_span(**kwargs)
+        antenna_span = self._antenna_span
+        delta_angle = self._Pointing.relay.update_span(**kwargs)
 
         # Check if vehicle is in range
         if (delta_angle < antenna_span):
-            configured = True
-            self.Controller.set_pointing(self.Pointing.relay)
-        return configured
+            self._Controller.set_pointing(self._Pointing.relay)
+        return
+
+    def _issue_control_command(self, n=0, **kwargs):
+        ''' Issue a control command '''
+        # Calculate transition points
+        vector_norm = numpy.linalg.norm(kwargs['orbit'])
+        e = self._Pointing.Orbit.Kepler.eccentricity
+        a = self._Pointing.Orbit.Kepler.semi_major_axis
+        transition = a*(1-e**2)/(1+e*numpy.cos(deg2rad(165)))
+
+        # Primary operational modes
+        transition_parameter = vector_norm < transition
+        if kwargs['orbit'][0] <= 0 and transition_parameter:
+            self._Controller.set_pointing(self._Pointing.sun)
+        else:
+            self._Controller.set_pointing(self._Pointing.nadir)
+
+            # Verify vehicle tracking (relay mode)
+            if self._Target is not None and transition_parameter:
+                kwargs['nspan'] = (n,n+1)
+                kwargs['local'] = self._Pointing.get_state_range(**kwargs)
+                kwargs['target'] = self._Pointing.relay.track(self._Target, **kwargs)
+                self._configure_antenna(**kwargs)
         
+        if not (n % self._Controller._tau): # Update every second
+            kwargs['control_torque'] = self._Controller.get_control_torque(**kwargs)
+        return kwargs
+    
+    def toggle_control(self):
+        ''' Toggle the controller '''
+        self._control_enabled = not self._control_enabled
+        return
+
+    def configure_tracking(self, Target=None, los=42):
+        ''' Configure target tracking with a specified line of sight '''
+        self._Target = Target
+        self._antenna_span = deg2rad(los)
+        return
+
     def update_dynamics(self, dt=(0,1), **kwargs):
         ''' Get the state trajectory with body rates (inertial lunar frame) '''
-        antenna_aligned = False
         step_size = kwargs['delta']
         vehicle_body_state = numpy.append(self.mrp, self.rates, axis=0)
 
         # Initialize required conditions
         kwargs['moments'] = self.moments
+        kwargs['control_torque'] = numpy.zeros((6,1))
         
+        # Configure timing
         tspan = dt[-1]-dt[0]
+        delta = (0,step_size)
         samples = int(1+tspan/step_size)
-        vehicle_state_history = vehicle_body_state
 
         # Set the controller signal decay time
-        tau = int(1/step_size)
-        self.Controller.tau = tau
+        self._Controller._tau = int(1/step_size)
         
+        # Vehicle state history and generation
+        vehicle_state_history = vehicle_body_state
+
         for n in range(samples):
             kwargs['state'] = vehicle_body_state
-            kwargs['orbit'] = self.Pointing.Orbit.inertial_solution(n*step_size)
+            kwargs['orbit'] = self._Pointing.Orbit.inertial_solution(n*step_size)
 
-            # Verify vehicle tracking (relay mode)
-            if self.Target is not None:
-                    kwargs['nspan'] = (n,n+1)
-                    kwargs['local'] = self.Pointing.get_state_range(**kwargs)
-                    kwargs['target'] = self.Pointing.relay.track(self.Target, **kwargs)
-                    antenna_aligned = self._configure_antenna(**kwargs)
+            if self._control_enabled:
+                kwargs = self._issue_control_command(n, **kwargs)
 
-            # Primary operational modes
-            if antenna_aligned is False:
-                if kwargs['orbit'][0] > 0:
-                    self.Controller.set_pointing(self.Pointing.nadir)                
-                else:
-                    self.Controller.set_pointing(self.Pointing.sun)
-            
-            if not (n % tau): # Update every second
-                kwargs['control_torque'] = self.Controller.get_control_torque(**kwargs)
-
+            # Integrate body dynamics
             [_,states] = solver.ode45v(tspan=(0,step_size), **kwargs)
             vehicle_body_state = self._normalize_attitude(states[:,-1])
 

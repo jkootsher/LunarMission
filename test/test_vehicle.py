@@ -9,23 +9,29 @@ from lib.simcore.support.variables import GLOBALS
 from lib.gnc.lunar.dynamics import Orbit as Lunar
 from lib.gnc.libration.dynamics import Orbit as L2
 
-ORBIT_CYCLES = 4
+ORBIT_CYCLES = 3
 
-elements = Kepler(e=0.6, a=600.4, i=56.2, argp=90, raan=0)
-Lunar_Orbit = Lunar(elements)
+# Configure orbital parameters
+elm_moon = Kepler(e=0.6, a=500, i=56.2, argp=90, raan=0)
+elm_halo = LCR3BP(h=2e-4, sbdy=GLOBALS.LUNAR['MU'], lbdy=GLOBALS.EARTH['MU'], cycles=ORBIT_CYCLES)
 
-elements = LCR3BP(h=2e-4, sbdy=GLOBALS.LUNAR['MU'], lbdy=GLOBALS.EARTH['MU'], cycles=ORBIT_CYCLES)
-Halo_Orbit = L2(elements)
+# Required orbital physics
+Halo_Orbit = L2(elm_halo)
+Lunar_Orbit = Lunar(elm_moon)
+
+# Create the satellites
+Orbiter = Satellite(Lunar_Orbit)
 L2_Satellite = Target(Halo_Orbit)
 
+# Configure the orbiter tracking (optional)
+Orbiter.configure_tracking(L2_Satellite)
 
-t_min = 0
-t_max = ORBIT_CYCLES*Lunar_Orbit.period
+# Calculate the orbiter dynamics
+tspan = (0, ORBIT_CYCLES*Lunar_Orbit.period)
+vehicle_state = Orbiter.update_dynamics(delta=.1, dt=tspan)
 
-Orbiter = Satellite(Lunar_Orbit)
-Orbiter.Target = L2_Satellite
-vehicle_state = Orbiter.update_dynamics(delta=.1, dt=(t_min,t_max))
 
+# Plots for analysis
 fig1 = mplot.figure()
 ax = fig1.gca()
 ax.plot(vehicle_state[0,:], color='blue', label='i-axis')

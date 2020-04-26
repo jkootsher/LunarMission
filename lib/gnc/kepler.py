@@ -15,6 +15,11 @@ class Kepler(object):
         self.inclination = deg2rad(i)
         self.true_anomaly = deg2rad(nu)
         self.arg_at_perigee = deg2rad(argp)
+
+        # Additional info
+        self.semi_minor_axis = a*math.sqrt(1-e**2)
+        self.perigee = a*(1-e)
+        self.apogee = a*(1+e)
     
     @classmethod
     def mean_anomaly(cls, **kwargs):
