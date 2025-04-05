@@ -51,11 +51,10 @@ time_in_eci_frame = [idx*elements.step*GLOBALS.LUNAR['T_ORBIT'] for idx in range
 # approx. the mean orbital speed of moon (1.022 km/s). This should
 # occur when the satellite is directly above or below the moon (~1{3}/4 T)
 lunar_match_time = int(elements.period/elements.step)//5
-print(trajectory_eci[4,lunar_match_time])
 
 # Plot HALO model
 fig1 = mplot.figure()
-ax = fig1.gca(projection='3d')
+ax = fig1.add_axes(Axes3D(fig1))
 ax.plot(trajectory[0,:], trajectory[1,:], trajectory[2,:])
 ax.scatter(L2_xlocation, 0, 0, marker='o', color='green', label='L2')
 ax.scatter(Earth_xlocation, 0, 0, marker='v', color='purple', label='Earth')
