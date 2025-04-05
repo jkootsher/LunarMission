@@ -1,9 +1,9 @@
 import math
 
-from variables import GLOBALS
-from exceptions import Verify
-from exceptions import VectorIndexError
-from exceptions import ReferenceFrameError
+from lib.simcore.support.variables import GLOBALS
+from lib.simcore.support.exceptions import Verify
+from lib.simcore.support.exceptions import VectorIndexError
+from lib.simcore.support.exceptions import ReferenceFrameError
 
 class Parameter(object):
     ''' Basic parameter type '''

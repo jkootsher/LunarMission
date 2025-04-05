@@ -53,7 +53,7 @@ z_earth = earth_radius*numpy.outer(numpy.ones(numpy.size(u)), numpy.cos(v))
 
 # Earth Centered Inertial
 fig1 = mplot.figure()
-ax = fig1.gca(projection='3d')
+ax = fig1.add_axes(Axes3D(fig1))
 
 # Earth
 ax.plot_wireframe(x_earth, y_earth, z_earth, color='blue', rstride=8, cstride=8, label='Earth Surface')
@@ -84,7 +84,7 @@ ax.legend(loc='upper left')
 
 # Lunar Centered Inertial
 fig3 = mplot.figure()
-ax = fig3.gca(projection='3d')
+ax = fig3.add_axes(Axes3D(fig3))
 
 # Orbit
 ax.plot(state_space_lci[0,:], state_space_lci[1,:], state_space_lci[2,:], label='Lunar Orbit')
